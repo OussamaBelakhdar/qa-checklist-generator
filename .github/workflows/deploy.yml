@@ -53,16 +53,12 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Start local HTTP server
-        run: |
-          npx serve . --listen 3000 &
-          sleep 3
-
       - name: Run Cypress tests (gate de qualité)
         uses: cypress-io/github-action@v6
         with:
+          start: npx serve . -l 3000
           wait-on: 'http://localhost:3000'
-          wait-on-timeout: 30
+          wait-on-timeout: 60
           browser: chrome
           headed: false
         env:
