@@ -1,0 +1,29 @@
+{
+  "name": "qa-checklist-generator",
+  "version": "1.0.0",
+  "description": "> *Instantly generate, prioritize, and manage comprehensive Quality Assurance checklists for any software feature. Now powered by Gemini 2.5 Pro and Claude 4.6 Sonnet for intelligent test case generation and risk analysis.*",
+  "main": "aggregator.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OussamaBelakhdar/qa-checklist-generator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/OussamaBelakhdar/qa-checklist-generator/issues"
+  },
+  "homepage": "https://github.com/OussamaBelakhdar/qa-checklist-generator#readme",
+  "dependencies": {
+    "firebase": "^12.10.0",
+    "jspdf": "^4.2.0",
+    "jspdf-autotable": "^5.0.7"
+  },
+  "devDependencies": {
+    "cypress": "^15.11.0"
+  }
+}
