@@ -12,23 +12,18 @@ describe('QA Checklist Generator — Filtres & Interactions', () => {
 
   // ─── FILTRES ───
   it('filtre par Critical réduit le nombre d\'items', () => {
-    cy.get('.item').its('length').as('totalItems');
-
-    cy.get('.tag[data-priority="critical"]').click();
-    cy.get('.tag[data-priority="critical"]').should('have.class', 'active');
-
-    cy.get('@totalItems').then(total => {
-      // Force wait for DOM update if necessary, or use a retry loop
+    cy.get('.item').should('have.length.above', 0).its('length').then(total => {
+      cy.get('.tag[data-priority="critical"]').click();
+      cy.get('.tag[data-priority="critical"]').should('have.class', 'active');
       cy.get('.item').should('have.length.lessThan', total);
     });
   });
 
   it('filtre "Tout" restaure tous les items', () => {
-    cy.get('.item').its('length').as('totalItems');
-    cy.get('.tag[data-priority="critical"]').click();
-    cy.get('.tag[data-priority="all"]').click();
-
-    cy.get('@totalItems').then(total => {
+    cy.get('.item').should('have.length.above', 0).its('length').then(total => {
+      cy.get('.tag[data-priority="critical"]').click();
+      cy.get('.item').should('have.length.lessThan', total); // Wait until filter applied
+      cy.get('.tag[data-priority="all"]').click();
       cy.get('.item').should('have.length', total);
     });
   });
