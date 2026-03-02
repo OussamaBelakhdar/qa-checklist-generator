@@ -35,13 +35,13 @@ jobs:
       - name: Run Cypress tests
         uses: cypress-io/github-action@v6
         with:
-          wait-on: 'http://localhost:5000'
+          wait-on: 'http://localhost:3000'
           wait-on-timeout: 60
           browser: chrome
           record: false
         env:
           AI_MOCK_MODE: 'true'
-          CYPRESS_baseUrl: 'http://localhost:5000'
+          CYPRESS_baseUrl: 'http://localhost:3000'
 
       - name: Upload screenshots on failure
         if: failure()
