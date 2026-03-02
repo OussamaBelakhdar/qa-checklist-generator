@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapport QA Partagé — QA Checklist Generator</title>
+  <meta name="description" content="Rapport QA partagé — visualisation en lecture seule.">
+
+  <!-- Open Graph pour les previews de lien -->
+  <meta property="og:title" content="Rapport QA — QA Checklist Generator">
+  <meta property="og:description" content="Consulte les métriques QA de ce projet.">
+  <meta property="og:type" content="website">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="dashboard.css">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- jsPDF (pas utilisé en lecture mais inclus pour cohérence) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ─── HEADER ─── -->
+  <header style="margin-bottom:16px">
+    <div class="header-top">
+      <div class="logo-badge">QA TOOL</div>
+      <div class="version-badge" id="reportBadge">Rapport partagé</div>
+    </div>
+    <h1>QA Metrics <span>Report</span></h1>
+    <p class="subtitle" id="reportSubtitle">// Lecture seule · Accessible sans compte</p>
+  </header>
+
+  <!-- ─── BANNIÈRE LECTURE SEULE ─── -->
+  <div class="shared-banner">
+    <span>🔒 Rapport en lecture seule</span>
+    <span class="shared-banner-sep">·</span>
+    <span id="bannerMeta">Chargement...</span>
+    <span class="shared-banner-sep">·</span>
+    <a href="index.html" class="shared-banner-link">Créer le mien →</a>
+  </div>
+
+  <!-- ─── LOADER ─── -->
+  <div id="sharedLoader" style="text-align:center;padding:60px 0">
+    <div class="spinner"></div>
+    <p style="color:var(--text-muted);font-family:'Space Mono',monospace;font-size:12px;margin-top:16px">
+      Chargement du rapport...
+    </p>
+  </div>
+
+  <!-- ─── ERREUR ─── -->
+  <div id="sharedError" style="display:none;text-align:center;padding:60px 0">
+    <div style="font-size:48px;margin-bottom:16px">🔗</div>
+    <h3 style="margin-bottom:8px" id="errorTitle">Rapport introuvable</h3>
+    <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px" id="errorDesc">
+      Ce lien est invalide ou a expiré.
+    </p>
+    <a href="index.html" class="btn btn-primary" style="text-decoration:none">
+      Créer mon propre rapport →
+    </a>
+  </div>
+
+  <!-- ─── RAPPORT ─── -->
+  <div id="sharedRoot" style="display:none"></div>
+
+  <!-- ─── FOOTER CTA ─── -->
+  <div id="sharedCTA" style="display:none" class="shared-cta">
+    <div class="shared-cta-content">
+      <div class="shared-cta-icon">🚀</div>
+      <div>
+        <div class="shared-cta-title">Crée tes propres rapports QA</div>
+        <div class="shared-cta-desc">
+          Génère des checklists, sauvegarde tes sessions, exporte vers GitHub et Jira,
+          et mesure ta maturité QA avec le Dashboard.
+        </div>
+      </div>
+      <a href="index.html" class="btn btn-primary" style="text-decoration:none;white-space:nowrap">
+        Commencer gratuitement →
+      </a>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="container">
+    <a href="https://automationdatacamp.com" style="color:var(--accent2);text-decoration:none">
+      AutomationDataCamp
+    </a>
+    · QA Checklist Generator · Rapport partagé (lecture seule)
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { getPublicReport } from './share.js';
+import { renderDashboard } from './dashboard.js';
+import { isFirebaseConfigured } from './firebase.js';
+
+const loader    = document.getElementById('sharedLoader');
+const errorEl   = document.getElementById('sharedError');
+const root      = document.getElementById('sharedRoot');
+const cta       = document.getElementById('sharedCTA');
+const bannerMeta = document.getElementById('bannerMeta');
+
+function showError(title, desc) {
+  loader.style.display   = 'none';
+  root.style.display     = 'none';
+  errorEl.style.display  = 'block';
+  document.getElementById('errorTitle').textContent = title;
+  document.getElementById('errorDesc').textContent  = desc;
+}
+
+async function loadSharedReport() {
+  // Récupère le shareId depuis ?r=xxx
+  const params  = new URLSearchParams(window.location.search);
+  const shareId = params.get('r');
+
+  if (!shareId) {
+    showError('Lien invalide', 'Aucun identifiant de rapport dans l\'URL.');
+    return;
+  }
+
+  if (!isFirebaseConfigured()) {
+    showError('Configuration manquante', 'Firebase n\'est pas configuré sur cette instance.');
+    return;
+  }
+
+  const result = await getPublicReport(shareId);
+
+  if (!result.success) {
+    showError('Rapport introuvable', result.error);
+    return;
+  }
+
+  const report = result.report;
+
+  // Mise à jour des métadonnées de la page
+  document.title = `${report.projectName} — Rapport QA Partagé`;
+  document.getElementById('reportBadge').textContent = 'v8.0 — Rapport partagé';
+  document.querySelector('h1').innerHTML = `${escapeHtml(report.projectName)} <span>QA Report</span>`;
+  document.getElementById('reportSubtitle').textContent =
+    `// Par ${report.authorName} · ${formatDate(report.createdAt)} · ${report.viewCount} vue(s)`;
+
+  // Bannière
+  const expDate = new Date(report.expiresAt).toLocaleDateString('fr-FR');
+  bannerMeta.textContent = `${report.sessionCount} session(s) · Expire le ${expDate} · ${report.viewCount} vue(s)`;
+
+  // Rendu du dashboard (avec métriques pré-calculées)
+  loader.style.display = 'none';
+  root.style.display   = 'block';
+  cta.style.display    = 'block';
+
+  // Utilise les sessions pour renderDashboard
+  // Les métriques sont déjà calculées dans report.metrics
+  // mais renderDashboard les recalcule — c'est voulu (cohérence)
+  renderDashboard(root, report.sessions || [], false);
+}
+
+function formatDate(iso) {
+  if (!iso) return '—';
+  return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+}
+
+function escapeHtml(str) {
+  return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// Lance le chargement
+loadSharedReport().catch(err => {
+  console.error(err);
+  showError('Erreur inattendue', err.message);
+});
+</script>
+
+</body>
+</html>

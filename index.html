@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description"
+        content="Génère des checklists QA avec IA (Gemini + Claude), exporte vers GitHub/Jira, partage tes rapports PDF.">
+    <title>QA Checklist Generator v9 — AI-Powered</title>
+    <link rel="stylesheet" href="main.css">
+    <link rel="stylesheet" href="auth.css">
+    <link rel="stylesheet" href="integrations.css">
+    <link rel="stylesheet" href="share.css">
+    <link rel="stylesheet" href="ai-panel.css">
+
+    <!-- jsPDF — requis pour la génération PDF côté client -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+
+    <!-- ─── GUARD: file:// protocol ─── -->
+    <script>
+    if (location.protocol === 'file:') {
+        document.addEventListener('DOMContentLoaded', function() {
+            document.body.style.cssText = 'margin:0;background:#0a0a0f;display:flex;align-items:center;justify-content:center;min-height:100vh;font-family:"Space Mono",monospace';
+            document.body.innerHTML =
+                '<div style="text-align:center;padding:40px;max-width:520px">' +
+                '<div style="font-size:56px;margin-bottom:20px">⚠️</div>' +
+                '<h2 style="color:#00e5ff;margin:0 0 14px;font-size:20px">Serveur local requis</h2>' +
+                '<p style="color:rgba(255,255,255,0.55);line-height:1.7;margin-bottom:28px;font-size:13px">' +
+                'Ce projet utilise des <strong style="color:#fff">modules ES</strong> qui sont bloqués par Chrome<br>' +
+                'via le protocole <code style="color:#f59e0b;background:rgba(245,158,11,.1);padding:2px 6px;border-radius:3px">file://</code>.<br><br>' +
+                'Un serveur local tourne déjà sur votre machine :' +
+                '</p>' +
+                '<a href="http://localhost:3000" style="color:#00e5ff;font-size:18px;text-decoration:none;border:1px solid #00e5ff;padding:12px 28px;border-radius:4px;display:inline-block;transition:background .2s" ' +
+                'onmouseover="this.style.background=\'rgba(0,229,255,.08)\'" onmouseout="this.style.background=\'transparent\'">' +
+                'http://localhost:3000 →' +
+                '</a>' +
+                '<p style="color:rgba(255,255,255,0.3);font-size:11px;margin-top:20px">ou lance : <code>npx serve .</code> dans le dossier du projet</p>' +
+                '</div>';
+        });
+    }
+    </script>
+
+    <div class="container">
+
+        <!-- ─── HEADER ─── -->
+        <header>
+            <div class="header-top">
+                <div class="logo-badge">QA TOOL</div>
+                <div class="version-badge" style="border-color:var(--accent2);color:var(--accent2)">v9.0 — AI · Gemini ·
+                    Claude</div>
+            </div>
+            <h1>Checklist <span>Generator</span></h1>
+            <p class="subtitle">// generate · validate · export · integrate · share · ✨ AI-powered — zero dependencies
+            </p>
+            <div id="userBadge" style="display:none"></div>
+            <div class="shortcuts-hint">
+                <span class="shortcut"><kbd>G</kbd> Générer</span>
+                <span class="shortcut"><kbd>E</kbd> Export MD</span>
+                <span class="shortcut"><kbd>C</kbd> Export CSV</span>
+                <span class="shortcut"><kbd>A</kbd> Tout cocher</span>
+                <span class="shortcut"><kbd>U</kbd> Tout décocher</span>
+            </div>
+        </header>
+
+        <!-- ─── HISTORIQUE ─── -->
+        <div id="historyPanel"></div>
+
+        <!-- ─── CONTROLS ─── -->
+        <div class="controls">
+            <div class="field-group">
+                <label for="featureType">Type de Feature</label>
+                <div class="select-wrapper">
+                    <select id="featureType">
+                        <option value="">— Sélectionner un type —</option>
+                    </select>
+                </div>
+            </div>
+            <div class="field-group">
+                <label for="featureName">Nom de la Feature (optionnel)</label>
+                <input type="text" id="featureName" placeholder="ex: Login page v2, API Users..." autocomplete="off">
+            </div>
+            <div class="field-group">
+                <label>&nbsp;</label>
+                <button id="btnGenerate" class="btn btn-primary">Générer ▶</button>
+            </div>
+        </div>
+
+        <!-- ─── FILTER BAR ─── -->
+        <div class="quick-filters" id="filterBar" style="display:none">
+            <span class="filter-label">FILTRER :</span>
+            <button class="tag active" data-priority="all">Tout</button>
+            <button class="tag" data-priority="critical">Critical</button>
+            <button class="tag" data-priority="high">High</button>
+            <button class="tag" data-priority="medium">Medium</button>
+            <button class="tag" data-priority="low">Low</button>
+        </div>
+
+        <!-- ─── OUTPUT ─── -->
+        <div id="output">
+            <div class="empty-state">
+                <span class="empty-icon">🧪</span>
+                <h3>Prêt à générer</h3>
+                <p>Sélectionne un type de feature puis clique sur <strong>Générer</strong>.</p>
+            </div>
+        </div>
+
+        <!-- ─── RISK CONTAINER (v9 — inline widget) ─── -->
+        <div id="riskContainer"></div>
+
+        <!-- ─── ACTIONS BAR ─── -->
+        <div class="actions-bar" id="actionsBar" style="display:none">
+
+            <!-- Génération & navigation -->
+            <button id="btnRegenerate" class="btn btn-primary">↺ Régénérer</button>
+            <button id="btnCheckAll" class="btn btn-secondary">☑ Tout cocher</button>
+            <button id="btnUncheckAll" class="btn btn-secondary">☐ Tout décocher</button>
+
+            <!-- Export local -->
+            <button id="btnExportMd" class="btn btn-export">⬇ MD</button>
+            <button id="btnExportCsv" class="btn btn-export">⬇ CSV</button>
+            <button id="btnCopy" class="btn btn-secondary">⎘ Copier</button>
+
+            <!-- Séparateur -->
+            <div class="actions-separator"></div>
+
+            <!-- Intégrations v6 -->
+            <button id="btnGitHub" class="btn btn-github">🐙 GitHub Issues</button>
+            <button id="btnJira" class="btn btn-jira">🔵 Jira</button>
+
+            <!-- v8 — Export PDF + Partage -->
+            <button id="btnShare" class="btn btn-share">📤 Exporter / Partager</button>
+
+            <!-- Séparateur IA -->
+            <div class="actions-separator"></div>
+
+            <!-- ★ v9 — IA -->
+            <button id="btnAIGenerate" class="btn btn-ai-generate" data-testid="btn-ai-generate">
+                ✨ Générer avec IA
+            </button>
+            <button id="btnAISuggest" class="btn btn-ai-suggest" data-testid="btn-ai-suggest">
+                💡 Suggestions
+            </button>
+            <button id="btnAIRisk" class="btn btn-ai-risk" data-testid="btn-ai-risk">
+                🎯 Analyser risques
+            </button>
+
+            <!-- Gestion session -->
+            <button id="btnReset" class="btn btn-danger">🗑 Reset</button>
+            <button id="btnLogout" class="btn btn-secondary" style="display:none">↩ Déconnexion</button>
+
+        </div>
+
+        <!-- ─── NAV DASHBOARD ─── -->
+        <div style="text-align:center;padding:20px 0 4px;display:none" id="dashNav">
+            <a href="dashboard.html"
+                style="font-family:'Space Mono',monospace;font-size:11px;color:var(--text-muted);text-decoration:none;border:1px solid var(--border);padding:6px 14px;border-radius:3px;transition:all 0.15s">
+                📊 Voir le Dashboard Métriques →
+            </a>
+        </div>
+
+    </div>
+
+    <!-- ─── FOOTER ─── -->
+    <footer>
+        <div class="container">
+            Built for <span>AutomationDataCamp</span> · QA Checklist Generator v9.0 — AI-Powered
+            · <a href="dashboard.html" style="color:var(--accent2);text-decoration:none">📊 Dashboard</a>
+            · <a href="landing.html" style="color:var(--accent2);text-decoration:none">Landing →</a>
+        </div>
+    </footer>
+
+    <div class="toast" id="toast"></div>
+
+    <script type="module" src="app.js"></script>
+
+</body>
+
+</html>

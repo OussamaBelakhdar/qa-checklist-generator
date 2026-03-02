@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QA Metrics Dashboard — QA Checklist Generator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="dashboard.css">
+
+  <!-- Chart.js via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ─── HEADER ─── -->
+  <header style="margin-bottom:16px">
+    <div class="header-top">
+      <div class="logo-badge">QA TOOL</div>
+      <div class="version-badge">v7.0 — Metrics</div>
+    </div>
+    <h1>QA Metrics <span>Dashboard</span></h1>
+    <p class="subtitle">// observe · measure · improve · decide — data-driven QA</p>
+    <div id="userBadge" style="display:none"></div>
+  </header>
+
+  <!-- ─── NAV ─── -->
+  <nav class="dash-nav">
+    <a href="index.html">← Outil</a>
+    <a href="dashboard.html" class="active">📊 Dashboard</a>
+    <a href="landing.html">Landing →</a>
+  </nav>
+
+  <!-- ─── LOADER ─── -->
+  <div id="dashLoader" style="text-align:center;padding:60px 0">
+    <div class="spinner"></div>
+    <p style="color:var(--text-muted);font-family:'Space Mono',monospace;font-size:12px;margin-top:16px">
+      Chargement des métriques...
+    </p>
+  </div>
+
+  <!-- ─── DASHBOARD ROOT ─── -->
+  <div id="dashboardRoot" style="display:none"></div>
+
+  <!-- ─── AUTH PROMPT (si non connecté et pas de données locales) ─── -->
+  <div id="dashAuthPrompt" style="display:none;text-align:center;padding:60px 0">
+    <div style="font-size:48px;margin-bottom:16px">📊</div>
+    <h3 style="margin-bottom:8px">Connecte-toi pour voir tes métriques</h3>
+    <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px">
+      Tes sessions sont sauvegardées dans le cloud.<br>
+      Connecte-toi pour voir l'historique complet et les métriques réelles.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <a href="index.html" class="btn btn-primary" style="text-decoration:none">
+        Se connecter
+      </a>
+      <button id="btnLoadDemo" class="btn btn-secondary">
+        Voir une démo
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ─── FOOTER ─── -->
+<footer>
+  <div class="container">
+    Built for <span>AutomationDataCamp</span> · QA Metrics Dashboard v7.0
+    · <a href="index.html" style="color:var(--accent2);text-decoration:none">← Outil</a>
+  </div>
+</footer>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { onAuthChange, getCurrentUser } from './auth.js';
+import { isFirebaseConfigured }         from './firebase.js';
+import { loadAllSessions, generateDemoSessions } from './aggregator.js';
+import { renderDashboard }              from './dashboard.js';
+import { getUserProfile }               from './users.js';
+
+const loader    = document.getElementById('dashLoader');
+const root      = document.getElementById('dashboardRoot');
+const authPmt   = document.getElementById('dashAuthPrompt');
+const userBadge = document.getElementById('userBadge');
+
+// ─── Affichage badge utilisateur ───
+function showUserBadge(profile) {
+  if (!userBadge || !profile) return;
+  userBadge.innerHTML = `
+    <span class="user-avatar">${(profile.displayName || '?')[0].toUpperCase()}</span>
+    <span class="user-name">${profile.displayName}</span>
+  `;
+  userBadge.style.display = 'flex';
+}
+
+// ─── Chargement et rendu ───
+async function loadAndRender(uid = null) {
+  loader.style.display = 'block';
+  root.style.display   = 'none';
+  authPmt.style.display = 'none';
+
+  const sessions = await loadAllSessions(uid, 50);
+
+  loader.style.display = 'none';
+
+  if (sessions.length === 0) {
+    authPmt.style.display = 'block';
+    return;
+  }
+
+  root.style.display = 'block';
+  renderDashboard(root, sessions, false);
+}
+
+// ─── Démo ───
+document.getElementById('btnLoadDemo')?.addEventListener('click', () => {
+  authPmt.style.display = 'none';
+  root.style.display    = 'block';
+  loader.style.display  = 'none';
+  const demoSessions = generateDemoSessions();
+  renderDashboard(root, demoSessions, true);
+});
+
+// ─── Auth state ───
+if (isFirebaseConfigured()) {
+  onAuthChange(async (user) => {
+    if (user) {
+      const profile = await getUserProfile(user.uid);
+      showUserBadge(profile || { displayName: user.displayName || user.email });
+      await loadAndRender(user.uid);
+    } else {
+      // Essaie quand même de charger depuis localStorage
+      await loadAndRender(null);
+    }
+  });
+} else {
+  // Firebase non configuré → charge depuis localStorage uniquement
+  loadAndRender(null);
+}
+</script>
+
+</body>
+</html>

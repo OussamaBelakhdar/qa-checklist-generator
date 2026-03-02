@@ -1,0 +1,133 @@
+# ─────────────────────────────────────────────
+# deploy.yml — Pipeline de Déploiement
+# ─────────────────────────────────────────────
+#
+# SE DÉCLENCHE SUR :
+#   - Push sur main UNIQUEMENT
+#   - ET seulement après que le job CI a réussi
+#
+# FAIT :
+#   1. Attend que les tests CI soient verts (needs: ci)
+#   2. Construit les assets statiques (copie + optimisation légère)
+#   3. Déploie sur GitHub Pages
+#   4. Affiche l'URL publique dans le résumé
+#
+# PRÉREQUIS :
+#   Dans Settings → Pages → Source : "GitHub Actions"
+#
+# ─────────────────────────────────────────────
+
+name: Deploy — GitHub Pages
+
+on:
+  push:
+    branches: [main]           # Seulement sur main
+
+# Permissions nécessaires pour GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un seul déploiement à la fois (pas de déploiements parallèles)
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ─── JOB 1 : Lancer les tests avant de déployer ───
+  test:
+    name: Run Tests Before Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Start local HTTP server
+        run: |
+          npx serve . --listen 3000 &
+          sleep 3
+
+      - name: Run Cypress tests (gate de qualité)
+        uses: cypress-io/github-action@v6
+        with:
+          wait-on: 'http://localhost:3000'
+          wait-on-timeout: 30
+          browser: chrome
+          headed: false
+        env:
+          CYPRESS_BASE_URL: http://localhost:3000
+
+  # ─── JOB 2 : Build ───
+  # Ne démarre que si les tests ont réussi
+  build:
+    name: Build Static Assets
+    runs-on: ubuntu-latest
+    needs: test                # Bloqué si test échoue
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Pour un projet purement statique, le "build"
+      # consiste à préparer le dossier de déploiement.
+      # Si tu ajoutes Vite ou un bundler plus tard,
+      # c'est ici que la commande `npm run build` sera ajoutée.
+      - name: Prepare deployment folder
+        run: |
+          mkdir -p dist
+          cp index.html dist/
+          cp landing.html dist/
+          cp -r styles dist/
+          cp -r src dist/
+          cp README.md dist/
+          echo "✓ Build folder prepared:"
+          find dist -type f | sort
+
+      # Configure GitHub Pages
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v4
+
+      # Upload le dossier dist comme artefact Pages
+      - name: Upload to GitHub Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  # ─── JOB 3 : Deploy ───
+  # Ne démarre que si le build a réussi
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build               # Bloqué si build échoue
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      # ─── Résumé de déploiement ───
+      - name: Deployment summary
+        run: |
+          echo "## 🚀 Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Info | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🌐 URL | ${{ steps.deployment.outputs.page_url }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 Commit | \`${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🕐 Time | $(date -u '+%Y-%m-%d %H:%M UTC') |" >> $GITHUB_STEP_SUMMARY
+          echo "| ✅ Tests | Passed |" >> $GITHUB_STEP_SUMMARY

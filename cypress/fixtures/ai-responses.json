@@ -1,0 +1,80 @@
+{
+    "generateScenarios": {
+        "reasoning": "Feature de paiement à risque élevé. Points critiques : validation des données bancaires, gestion des erreurs réseau, double débit.",
+        "scenarios": [
+            {
+                "label": "Paiement réussi avec carte valide",
+                "priority": "critical",
+                "category": "Fonctionnel",
+                "steps": [
+                    "Saisir numéro carte valide",
+                    "Saisir CVV",
+                    "Confirmer"
+                ],
+                "expectedResult": "Transaction confirmée, email reçu",
+                "aiGenerated": true
+            },
+            {
+                "label": "Refus carte expirée",
+                "priority": "critical",
+                "category": "Fonctionnel",
+                "steps": [
+                    "Saisir carte expirée",
+                    "Soumettre"
+                ],
+                "expectedResult": "Message d'erreur explicite, aucun débit",
+                "aiGenerated": true
+            },
+            {
+                "label": "Timeout réseau en cours de paiement",
+                "priority": "high",
+                "category": "Edge Cases",
+                "steps": [
+                    "Initier paiement",
+                    "Simuler coupure réseau"
+                ],
+                "expectedResult": "Idempotence garantie, pas de double débit",
+                "aiGenerated": true
+            }
+        ]
+    },
+    "suggestMissingItems": {
+        "explanation": "La checklist couvre bien les cas fonctionnels de base mais manque de tests de sécurité (injection, XSS) et de tests d'accessibilité.",
+        "suggestions": [
+            {
+                "label": "Injection SQL dans les champs de formulaire",
+                "priority": "critical",
+                "category": "Sécurité",
+                "rationale": "Les formulaires sans sanitization exposent à des attaques SQL injection",
+                "aiSuggested": true
+            },
+            {
+                "label": "Navigation clavier complète (tabindex)",
+                "priority": "medium",
+                "category": "Accessibilité",
+                "rationale": "WCAG 2.1 requiert une navigation complète au clavier",
+                "aiSuggested": true
+            }
+        ]
+    },
+    "analyzeRisks": {
+        "riskLevel": "critical",
+        "riskScore": 78,
+        "summary": "3 items Critical non testés représentent un risque de mise en production inacceptable.",
+        "insights": [
+            "Aucun test de sécurité complété sur les endpoints d'authentification",
+            "La gestion des erreurs de paiement n'est pas validée"
+        ],
+        "recommendations": [
+            {
+                "action": "Tester tous les scénarios d'erreur de paiement",
+                "priority": "immediate",
+                "rationale": "Impact financier direct en cas de double débit"
+            }
+        ],
+        "blockers": [
+            "Paiement avec carte valide — test fonctionnel de base non effectué",
+            "Gestion erreur réseau — risque de double débit"
+        ]
+    }
+}

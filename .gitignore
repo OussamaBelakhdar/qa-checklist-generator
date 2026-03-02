@@ -1,0 +1,29 @@
+# Dependencies
+node_modules/
+functions/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Firebase
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Cypress
+cypress/screenshots/
+cypress/videos/
+cypress/downloads/
+
+# IDE
+.vscode/
+.idea/
+.cursorrules
+.claude/
+
+# OS
+.DS_Store
+Thumbs.db
