@@ -8,7 +8,7 @@
 describe('Share Panel — Ouverture et UI', () => {
 
   beforeEach(() => {
-    cy.visit('/index-v8.html');
+    cy.visit('/index.html');
   });
 
   it('le bouton Exporter/Partager est dans le DOM', () => {
@@ -72,7 +72,7 @@ describe('Share Panel — Ouverture et UI', () => {
 describe('Share Panel — Champs et validation', () => {
 
   beforeEach(() => {
-    cy.visit('/index-v8.html');
+    cy.visit('/index.html');
     cy.get('#featureType').select('login');
     cy.get('#btnGenerate').click();
     cy.get('#btnShare').click();
@@ -138,19 +138,19 @@ describe('Page Rapport Partagé (shared.html)', () => {
 describe('PDF Export — Pré-conditions', () => {
 
   it('jsPDF est chargé depuis le CDN sur index-v8.html', () => {
-    cy.visit('/index-v8.html');
+    cy.visit('/index.html');
     cy.window().should('have.property', 'jspdf');
   });
 
   it('jsPDF-AutoTable est chargé', () => {
-    cy.visit('/index-v8.html');
+    cy.visit('/index.html');
     cy.window().then(win => {
       expect(win.jspdf?.jsPDF).to.exist;
     });
   });
 
   it('le panneau PDF affiche une barre de progression', () => {
-    cy.visit('/index-v8.html');
+    cy.visit('/index.html');
     cy.get('#featureType').select('api');
     cy.get('#btnGenerate').click();
     cy.get('#btnShare').click();

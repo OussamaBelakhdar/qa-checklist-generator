@@ -19,7 +19,7 @@ import { chromium } from 'playwright';
 import { join, resolve } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
-const TARGET = 'http://localhost:3000/index-v9.html?mock=true';
+const TARGET = 'http://localhost:3000/index.html?mock=true';
 const ROOT = resolve('c:/Users/oussama/OneDrive - Romanian-American University (STUD)/Desktop/QA Checklist Generator');
 const SS_DIR = join(ROOT, 'screenshots');
 if (!existsSync(SS_DIR)) mkdirSync(SS_DIR);
@@ -71,7 +71,7 @@ async function run() {
   const page = await ctx.newPage();
 
   // Activate mock mode before any script fires
-  await page.addInitScript(function() { window.__AI_MOCK__ = true; });
+  await page.addInitScript(function () { window.__AI_MOCK__ = true; });
 
   const consoleLogs = attachConsoleCollector(page);
 
@@ -97,7 +97,7 @@ async function run() {
   if (skipVisible) {
     console.log('  + Auth panel detected, clicking "Continuer sans compte"...');
     await page.click('#skipAuth');
-    await page.waitForFunction(function() {
+    await page.waitForFunction(function () {
       var s = document.getElementById('featureType');
       return s && s.options.length > 1;
     }, { timeout: 8000 });
@@ -105,23 +105,23 @@ async function run() {
   }
 
   // Get all option texts for logging
-  const options = await page.$$eval('#featureType option', function(opts) {
-    return opts.map(function(o, i) { return i + ': ' + o.value + ' — ' + o.textContent.trim(); });
+  const options = await page.$$eval('#featureType option', function (opts) {
+    return opts.map(function (o, i) { return i + ': ' + o.value + ' — ' + o.textContent.trim(); });
   });
   console.log('  Available options:');
-  options.forEach(function(o) { console.log('    ' + o); });
+  options.forEach(function (o) { console.log('    ' + o); });
 
   // Select index 1 (2nd option = first real feature type after placeholder)
-  const secondValue = await page.$eval('#featureType option:nth-child(2)', function(o) { return o.value; });
+  const secondValue = await page.$eval('#featureType option:nth-child(2)', function (o) { return o.value; });
   await page.selectOption('#featureType', secondValue);
-  const chosen = await page.$eval('#featureType option:checked', function(o) { return o.textContent.trim(); });
+  const chosen = await page.$eval('#featureType option:checked', function (o) { return o.textContent.trim(); });
   console.log('  + Selected: "' + chosen + '" (value="' + secondValue + '")');
 
   // ── STEP 5: Click #btnGenerate ───────────────────────────────────────────
   console.log('[STEP 5] Click #btnGenerate...');
   await page.click('#btnGenerate');
   await page.waitForSelector('.item', { timeout: 6000 });
-  const itemCount = await page.$$eval('.item', function(els) { return els.length; });
+  const itemCount = await page.$$eval('.item', function (els) { return els.length; });
   console.log('  + ' + itemCount + ' items generated');
 
   // ── STEP 6: Wait 2 s + screenshot ───────────────────────────────────────
@@ -132,7 +132,7 @@ async function run() {
   // ── STEP 7: Scroll to actions bar + screenshot AI buttons ───────────────
   console.log('[STEP 7] Scroll to actions bar + screenshot AI buttons...');
   await page.waitForSelector('#actionsBar', { state: 'visible', timeout: 5000 });
-  await page.evaluate(function() {
+  await page.evaluate(function () {
     document.getElementById('actionsBar').scrollIntoView({ behavior: 'instant', block: 'center' });
   });
   await page.waitForTimeout(300);
@@ -140,12 +140,12 @@ async function run() {
   // Verify each AI button
   var aiDefs = [
     ['btn-ai-generate', '✨ Generer avec IA'],
-    ['btn-ai-suggest',  '💡 Suggestions'],
-    ['btn-ai-risk',     '🎯 Analyser risques'],
+    ['btn-ai-suggest', '💡 Suggestions'],
+    ['btn-ai-risk', '🎯 Analyser risques'],
   ];
   for (var i = 0; i < aiDefs.length; i++) {
     var testId = aiDefs[i][0];
-    var label  = aiDefs[i][1];
+    var label = aiDefs[i][1];
     var vis = await page.isVisible('[data-testid="' + testId + '"]');
     console.log('  ' + (vis ? '✓' : '✗') + ' ' + label + ': ' + (vis ? 'VISIBLE' : 'NOT VISIBLE'));
   }
@@ -188,22 +188,22 @@ async function run() {
   printLogs([...consoleLogs], 'post-interaction');
 
   // Summary
-  const errors = consoleLogs.filter(function(l) { return l.type === 'error' || l.type === 'pageerror'; });
-  const warns  = consoleLogs.filter(function(l) { return l.type === 'warn'; });
+  const errors = consoleLogs.filter(function (l) { return l.type === 'error' || l.type === 'pageerror'; });
+  const warns = consoleLogs.filter(function (l) { return l.type === 'warn'; });
   console.log('\n========= SUMMARY =========');
   console.log('  Errors:   ' + errors.length);
   console.log('  Warnings: ' + warns.length);
   console.log('  Screenshots saved to: ' + SS_DIR);
   console.log('  Files:');
   ['v9_01_initial_load', 'v9_02_checklist_generated', 'v9_03_actions_bar',
-   'v9_03b_actions_bar_context', 'v9_04_ai_generator_panel', 'v9_04b_ai_panel_crop'].forEach(function(n) {
-    console.log('    - ' + n + '.png');
-  });
+    'v9_03b_actions_bar_context', 'v9_04_ai_generator_panel', 'v9_04b_ai_panel_crop'].forEach(function (n) {
+      console.log('    - ' + n + '.png');
+    });
 
   await browser.close();
 }
 
-run().catch(function(err) {
+run().catch(function (err) {
   console.error('\n[FATAL] ' + (err.message || err));
   process.exit(1);
 });

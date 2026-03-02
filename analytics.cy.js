@@ -15,11 +15,11 @@ describe('Analytics — metrics.js', () => {
     type: 'login',
     name: 'Login Feature',
     checklist: [
-      { id: 1, text: 'Test 1', priority: 'critical', section: 'Auth',   checked: true  },
-      { id: 2, text: 'Test 2', priority: 'critical', section: 'Auth',   checked: false },
-      { id: 3, text: 'Test 3', priority: 'high',     section: 'UX',     checked: true  },
-      { id: 4, text: 'Test 4', priority: 'medium',   section: 'UX',     checked: true  },
-      { id: 5, text: 'Test 5', priority: 'low',      section: 'Extras', checked: false },
+      { id: 1, text: 'Test 1', priority: 'critical', section: 'Auth', checked: true },
+      { id: 2, text: 'Test 2', priority: 'critical', section: 'Auth', checked: false },
+      { id: 3, text: 'Test 3', priority: 'high', section: 'UX', checked: true },
+      { id: 4, text: 'Test 4', priority: 'medium', section: 'UX', checked: true },
+      { id: 5, text: 'Test 5', priority: 'low', section: 'Extras', checked: false },
     ],
     updatedAt: new Date(Date.now() - 86_400_000).toISOString(),
   };
@@ -38,8 +38,8 @@ describe('Analytics — metrics.js', () => {
     name: 'Form Feature',
     checklist: [
       { id: 10, text: 'T10', priority: 'critical', section: 'Validation', checked: true },
-      { id: 11, text: 'T11', priority: 'high',     section: 'Validation', checked: true },
-      { id: 12, text: 'T12', priority: 'medium',   section: 'Validation', checked: true },
+      { id: 11, text: 'T11', priority: 'high', section: 'Validation', checked: true },
+      { id: 12, text: 'T12', priority: 'medium', section: 'Validation', checked: true },
     ],
     updatedAt: new Date().toISOString(),
   };
@@ -50,7 +50,7 @@ describe('Analytics — metrics.js', () => {
       cy.window().then(win => {
         // Import dynamique ES Module depuis la page de test
         return win.eval(`
-          import('/src/analytics/metrics.js').then(m => {
+          import('/metrics.js').then(m => {
             const result = m.computeGlobalCoverage([${JSON.stringify(SESSION_FULL)}]);
             window.__testResult = result;
           })
@@ -64,7 +64,7 @@ describe('Analytics — metrics.js', () => {
 
     it('retourne 0% pour une session vide', () => {
       cy.window().then(win => win.eval(`
-        import('/src/analytics/metrics.js').then(m => {
+        import('/metrics.js').then(m => {
           window.__testResult = m.computeGlobalCoverage([${JSON.stringify(SESSION_EMPTY)}]);
         })
       `)).then(() => {
@@ -75,7 +75,7 @@ describe('Analytics — metrics.js', () => {
 
     it('retourne 100% quand tout est coché', () => {
       cy.window().then(win => win.eval(`
-        import('/src/analytics/metrics.js').then(m => {
+        import('/metrics.js').then(m => {
           window.__testResult = m.computeGlobalCoverage([${JSON.stringify(SESSION_COMPLETE)}]);
         })
       `)).then(() => {
@@ -88,7 +88,7 @@ describe('Analytics — metrics.js', () => {
   describe('computeCoverageByPriority', () => {
     it('calcule la couverture critical correctement', () => {
       cy.window().then(win => win.eval(`
-        import('/src/analytics/metrics.js').then(m => {
+        import('/metrics.js').then(m => {
           window.__testResult = m.computeCoverageByPriority([${JSON.stringify(SESSION_FULL)}]);
         })
       `)).then(() => {
@@ -99,7 +99,7 @@ describe('Analytics — metrics.js', () => {
 
     it('retourne 4 priorités dans le résultat', () => {
       cy.window().then(win => win.eval(`
-        import('/src/analytics/metrics.js').then(m => {
+        import('/metrics.js').then(m => {
           window.__testResult = m.computeCoverageByPriority([${JSON.stringify(SESSION_FULL)}]);
         })
       `)).then(() => {
@@ -113,7 +113,7 @@ describe('Analytics — metrics.js', () => {
     it('group correctement par type de feature', () => {
       const sessions = [SESSION_FULL, SESSION_EMPTY, SESSION_COMPLETE];
       cy.window().then(win => win.eval(`
-        import('/src/analytics/metrics.js').then(m => {
+        import('/metrics.js').then(m => {
           window.__testResult = m.computeFeatureDistribution(${JSON.stringify(sessions)});
         })
       `)).then(() => {
@@ -128,7 +128,7 @@ describe('Analytics — metrics.js', () => {
   describe('computeMaturityScore', () => {
     it('retourne 0 pour sessions vides', () => {
       cy.window().then(win => win.eval(`
-        import('/src/analytics/metrics.js').then(m => {
+        import('/metrics.js').then(m => {
           window.__testResult = m.computeMaturityScore([]);
         })
       `)).then(() => {
@@ -139,7 +139,7 @@ describe('Analytics — metrics.js', () => {
     it('retourne un score entre 0 et 100', () => {
       const sessions = [SESSION_FULL, SESSION_COMPLETE];
       cy.window().then(win => win.eval(`
-        import('/src/analytics/metrics.js').then(m => {
+        import('/metrics.js').then(m => {
           window.__testResult = m.computeMaturityScore(${JSON.stringify(sessions)});
         })
       `)).then(() => {
@@ -149,7 +149,7 @@ describe('Analytics — metrics.js', () => {
 
     it('inclut un breakdown avec 4 dimensions', () => {
       cy.window().then(win => win.eval(`
-        import('/src/analytics/metrics.js').then(m => {
+        import('/metrics.js').then(m => {
           window.__testResult = m.computeMaturityScore([${JSON.stringify(SESSION_COMPLETE)}]);
         })
       `)).then(() => {
@@ -165,7 +165,7 @@ describe('Analytics — metrics.js', () => {
     it('identifie les sections non couvertes comme risquées', () => {
       const sessions = [SESSION_FULL, SESSION_FULL]; // doublon pour avoir total >= 2
       cy.window().then(win => win.eval(`
-        import('/src/analytics/metrics.js').then(m => {
+        import('/metrics.js').then(m => {
           window.__testResult = m.computeRiskySections(${JSON.stringify(sessions)});
         })
       `)).then(() => {

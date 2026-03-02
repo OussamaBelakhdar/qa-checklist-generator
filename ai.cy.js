@@ -8,7 +8,7 @@
 describe('IA — Panneau Génération (Gemini)', () => {
 
     beforeEach(() => {
-        cy.visit('/index-v9.html?mock=true');
+        cy.visit('/index.html?mock=true');
         // Activer le mock mode
         cy.window().then(win => { win.__AI_MOCK__ = true; });
     });
@@ -79,7 +79,7 @@ describe('IA — Panneau Génération (Gemini)', () => {
 describe('IA — Suggestions (Claude)', () => {
 
     beforeEach(() => {
-        cy.visit('/index-v9.html?mock=true');
+        cy.visit('/index.html?mock=true');
         cy.window().then(win => { win.__AI_MOCK__ = true; });
     });
 
@@ -123,7 +123,7 @@ describe('IA — Suggestions (Claude)', () => {
 describe('IA — Analyse des risques (Gemini)', () => {
 
     beforeEach(() => {
-        cy.visit('/index-v9.html?mock=true');
+        cy.visit('/index.html?mock=true');
         cy.window().then(win => { win.__AI_MOCK__ = true; });
         cy.get('#featureType').select('payment');
         cy.get('#btnGenerate').click();
