@@ -69,13 +69,13 @@ describe('QA Checklist Generator — Génération', () => {
     cy.get('#btnGenerate').click();
 
     cy.get('@loginCount').then(loginCount => {
-      cy.get('.item').its('length').should('not.equal', loginCount);
+      cy.get('.item').should('have.length.not.equal', loginCount);
     });
   });
 
   // ─── VALIDATION ───
   it('affiche un toast d\'erreur si aucun type sélectionné', () => {
     cy.get('#btnGenerate').click();
-    cy.get('.toast').should('be.visible').and('contain', '⚠');
+    cy.get('#toast').should('have.class', 'show').and('contain', '⚠');
   });
 });

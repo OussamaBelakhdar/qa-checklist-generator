@@ -95,7 +95,7 @@ describe('Share Panel — Champs et validation', () => {
   it('le bouton Créer lien requiert une connexion', () => {
     // Sans user Firebase connecté, un toast s'affiche
     cy.get('#btnCreateLink').click();
-    cy.get('#toast').should('be.visible');
+    cy.get('#toast').should('have.class', 'show');
     cy.get('#toast').should('contain', 'Connexion requise');
   });
 

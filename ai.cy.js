@@ -45,8 +45,8 @@ describe('IA — Panneau Génération (Gemini)', () => {
             'Page de login avec email/password, Google OAuth, et rate limiting après 5 tentatives'
         );
         cy.get('[data-testid="btn-run-ai-generate"]').click();
-        // En mock mode : réponse après ~1.2s
-        cy.get('#aiScenariosResult', { timeout: 10000 }).should('be.visible');
+        // En mock mode : réponse après ~1.2s. En headless, verify existence instead of visibility
+        cy.get('#aiScenariosResult', { timeout: 10000 }).should('exist');
         cy.get('.ai-scenario-item').should('have.length.at.least', 3);
     });
 

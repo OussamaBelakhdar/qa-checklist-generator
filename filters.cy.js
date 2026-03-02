@@ -18,7 +18,8 @@ describe('QA Checklist Generator — Filtres & Interactions', () => {
     cy.get('.tag[data-priority="critical"]').should('have.class', 'active');
 
     cy.get('@totalItems').then(total => {
-      cy.get('.item').its('length').should('be.lessThan', total);
+      // Force wait for DOM update if necessary, or use a retry loop
+      cy.get('.item').should('have.length.lessThan', total);
     });
   });
 
