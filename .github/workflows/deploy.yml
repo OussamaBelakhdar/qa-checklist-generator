@@ -86,10 +86,9 @@ jobs:
       - name: Prepare deployment folder
         run: |
           mkdir -p dist
-          cp index.html dist/
-          cp landing.html dist/
-          cp -r styles dist/
-          cp -r src dist/
+          cp *.html dist/
+          cp *.js dist/
+          cp *.css dist/
           cp README.md dist/
           echo "✓ Build folder prepared:"
           find dist -type f | sort
