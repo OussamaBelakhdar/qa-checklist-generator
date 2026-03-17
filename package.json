@@ -20,7 +20,7 @@
   "homepage": "https://github.com/OussamaBelakhdar/qa-checklist-generator#readme",
   "dependencies": {
     "firebase": "^12.10.0",
-    "jspdf": "^4.2.0",
+    "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.7"
   },
   "devDependencies": {
